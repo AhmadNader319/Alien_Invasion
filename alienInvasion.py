@@ -2,7 +2,8 @@ import pygame
 from ship import Ship
 from rocket import Rocket
 from settings import Settings
-
+from bullet import Bullet
+from pygame.sprite import Sprite
 
 class AlienInvasion:
     def __init__(self):
@@ -15,6 +16,7 @@ class AlienInvasion:
 
         self.ship = Ship(self)
         self.rocket = Rocket(self)
+        self.bullets = pygame.sprite.Group()
         self.ship_events = 0
         self.rocket_events = 0
         self.font = pygame.font.Font(None, 36)
@@ -22,6 +24,10 @@ class AlienInvasion:
     def run_game(self):
         while True:
             self._check_events()
+            self.ship.update()
+            self.rocket.update()
+            self._update_bullets() 
+
             self._update_screen()
 
     def _check_events(self):
@@ -31,6 +37,8 @@ class AlienInvasion:
                 exit()
             elif event.type == pygame.KEYDOWN:
                 self._check_keydown_events(event)
+                if event.key == pygame.K_SPACE:
+                    self._fire_bullet()
             elif event.type == pygame.KEYUP:
                 self._check_keyup_events(event)
 
@@ -86,6 +94,8 @@ class AlienInvasion:
             event_count = 1
         return event_count
 
+
+
     def _handle_rocket_keyup(self, event):
         event_count = 0
         if event.key == pygame.K_d:
@@ -97,6 +107,19 @@ class AlienInvasion:
         elif event.key == pygame.K_s:
             self.rocket.moving_down = False
         return event_count
+    
+    def _fire_bullet(self):
+        if len(self.bullets) < self.settings.bullets_allowed:
+            new_bullet = Bullet(self)
+            self.bullets.add(new_bullet)
+
+    def _update_bullets(self):
+        self.bullets.update()
+
+        for bullet in self.bullets.copy():
+            if bullet.rect.bottom <= 0:
+                self.bullets.remove(bullet)
+        print(len(self.bullets))
 
     def _update_screen(self):
         self.screen.fill(self.settings.bg_color)
@@ -107,6 +130,8 @@ class AlienInvasion:
         self.rocket.update()
         self.rocket.blitme()
 
+        for bullet in self.bullets.sprites():
+            bullet.draw_bullet()
         ship_text = self.font.render(f"Ship Events: {self.ship_events}", True, (0, 0, 0))
         rocket_text = self.font.render(f"Rocket Events: {self.rocket_events}", True, (0, 0, 0))
 
